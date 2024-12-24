@@ -17,6 +17,7 @@ body {
     overflow: hidden;
     background: #2C2C2C;
     touch-action: none;
+    user-select: none;
     font-family: 'Roboto', sans-serif;
     color: var(--text-color);
 }
@@ -202,6 +203,7 @@ canvas {
     width: 100%;
     height: 100%;
     touch-action: none;
+    cursor: pointer;
 }
 
 .game-ui {
@@ -271,11 +273,14 @@ canvas {
     color: white;
     font-family: Arial, sans-serif;
     background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
 }
 
 .stats {
     display: flex;
     gap: 20px;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .buttons {
@@ -291,6 +296,7 @@ button {
     color: white;
     cursor: pointer;
     pointer-events: auto;
+    transition: background 0.2s;
 }
 
 button:hover {

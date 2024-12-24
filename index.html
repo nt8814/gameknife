@@ -19,14 +19,54 @@
         
         <!-- Score Display -->
         <div class="score-display">
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="combo">Combo: <span id="combo">x1</span></div>
-            <div class="power">Power: <span id="power">1</span></div>
+            <div class="score">
+                <img src="images/ui/score-icon.svg" alt="Score">
+                <span id="score">0</span>
+            </div>
+            <div class="combo">
+                <img src="images/ui/combo-icon.svg" alt="Combo">
+                <span id="combo">x1</span>
+            </div>
+            <div class="power">
+                <img src="images/ui/power-icon.svg" alt="Power">
+                <span id="power">1</span>
+            </div>
         </div>
 
         <!-- Shop Button -->
-        <button id="shop-btn" class="shop-button">Shop</button>
+        <button id="shop-btn" class="shop-button">
+            <img src="images/ui/shop-icon.svg" alt="Shop">
+            Shop
+        </button>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Shop</h2>
+                <div class="shop-items">
+                    <div class="shop-item" data-item="power">
+                        <img src="images/powerups/power-upgrade.svg" alt="Power Upgrade">
+                        <span class="item-name">Power Up</span>
+                        <span class="item-cost">100</span>
+                    </div>
+                    <div class="shop-item" data-item="combo">
+                        <img src="images/powerups/combo-multiplier.svg" alt="Combo Multiplier">
+                        <span class="item-name">Combo Boost</span>
+                        <span class="item-cost">200</span>
+                    </div>
+                    <div class="shop-item" data-item="auto">
+                        <img src="images/powerups/auto-click.svg" alt="Auto Clicker">
+                        <span class="item-name">Auto Clicker</span>
+                        <span class="item-cost">500</span>
+                    </div>
+                </div>
+                <button id="close-shop" class="close-button">Close</button>
+            </div>
+        </div>
     </div>
+
+    <!-- Effects Layer -->
+    <div id="effects-layer"></div>
 
     <!-- Load Scripts -->
     <script src="bundle.js"></script>

@@ -1,0 +1,16 @@
+{
+  "name": "knife-throwing-game",
+  "version": "1.0.0",
+  "description": "A web-based knife throwing game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}

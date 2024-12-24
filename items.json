@@ -1,0 +1,79 @@
+{
+    "knives": {
+        "basic": {
+            "id": "basic-knife",
+            "name": "Basic Knife",
+            "description": "Standard throwing knife",
+            "image": "images/knives/basic-knife.svg",
+            "price": 0,
+            "power": 1,
+            "unlocked": true
+        },
+        "golden": {
+            "id": "golden-knife",
+            "name": "Golden Knife",
+            "description": "Increases points earned by 50%",
+            "image": "images/knives/golden-knife.svg",
+            "price": 1000,
+            "power": 1.5,
+            "unlocked": false
+        },
+        "rainbow": {
+            "id": "rainbow-knife",
+            "name": "Rainbow Knife",
+            "description": "Doubles combo gain speed",
+            "image": "images/knives/rainbow-knife.svg",
+            "price": 2000,
+            "power": 1,
+            "comboBonus": 2,
+            "unlocked": false
+        }
+    },
+    "powerups": {
+        "autoclick": {
+            "id": "auto-click",
+            "name": "Auto Clicker",
+            "description": "Automatically clicks every second",
+            "image": "images/powerups/auto-click.svg",
+            "price": 500,
+            "duration": "permanent",
+            "power": 0.5
+        },
+        "combo": {
+            "id": "combo-boost",
+            "name": "Combo Booster",
+            "description": "Increases maximum combo multiplier",
+            "image": "images/powerups/combo-multiplier.svg",
+            "price": 200,
+            "increment": 1
+        },
+        "power": {
+            "id": "power-up",
+            "name": "Power Up",
+            "description": "Increases base click power",
+            "image": "images/powerups/power-upgrade.svg",
+            "price": 100,
+            "increment": 1
+        }
+    },
+    "effects": {
+        "click": {
+            "id": "click-effect",
+            "name": "Click Effect",
+            "description": "Basic click effect",
+            "image": "images/effects/click-effect.svg"
+        },
+        "star": {
+            "id": "star-effect",
+            "name": "Star Effect",
+            "description": "Star particle effect",
+            "image": "images/effects/star-effect.svg"
+        },
+        "sparkle": {
+            "id": "sparkle-effect",
+            "name": "Sparkle Effect",
+            "description": "Sparkle particle effect",
+            "image": "images/effects/sparkle-effect.svg"
+        }
+    }
+}

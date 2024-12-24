@@ -14,10 +14,11 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
     overflow: hidden;
+    background: #2C2C2C;
+    touch-action: none;
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
 }
 
 .game-container {
@@ -200,6 +201,7 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
+    touch-action: none;
 }
 
 .game-ui {
@@ -239,18 +241,12 @@ canvas {
 
 /* Слой эффектов */
 #game-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-}
-
-#gameCanvas {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    touch-action: none;
 }
 
 #effects-layer {
@@ -260,32 +256,26 @@ canvas {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 1;
 }
 
 .ui-container {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: fixed;
     width: 100%;
-    height: 100%;
-    z-index: 2;
     pointer-events: none;
 }
 
 .top-bar {
     display: flex;
     justify-content: space-between;
-    padding: 20px;
-    pointer-events: auto;
+    padding: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .stats {
     display: flex;
     gap: 20px;
-    color: white;
-    font-size: 18px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .buttons {
@@ -300,15 +290,15 @@ button {
     background: rgba(255, 255, 255, 0.2);
     color: white;
     cursor: pointer;
-    transition: background 0.3s;
+    pointer-events: auto;
 }
 
 button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-.ability-bar {
-    position: absolute;
+.controls {
+    position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
@@ -317,31 +307,20 @@ button:hover {
     pointer-events: auto;
 }
 
-.ability {
-    width: 50px;
-    height: 50px;
+.control-key {
+    width: 60px;
+    height: 60px;
     background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-}
-
-.ability .key {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.ability .cooldown {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 0%;
-    background: rgba(255, 255, 255, 0.3);
-    transition: height 0.1s linear;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    user-select: none;
+    touch-action: none;
 }
 
 /* Кнопка "Назад" */

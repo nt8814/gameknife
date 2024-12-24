@@ -1,10 +1,23 @@
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
-tg.expand();
+
+// Wait for WebApp to be ready
+window.Telegram.WebApp.ready();
+window.Telegram.WebApp.expand();
 
 // Get canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// Set canvas size to match viewport
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
 // Game state
 const gameState = {

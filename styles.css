@@ -20,6 +20,7 @@ body {
     color: white;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
 }
 
 #game-container {
@@ -32,12 +33,13 @@ body {
 }
 
 #gameCanvas {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
     z-index: 1;
+    cursor: pointer;
 }
 
 .game-container {
@@ -265,19 +267,20 @@ canvas {
     top: 0;
     left: 0;
     right: 0;
+    bottom: 0;
     z-index: 2;
+    pointer-events: none;
     padding: 20px;
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: flex-start;
-    pointer-events: none;
 }
 
 .score-container, .combo-container, .power-container {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
     padding: 8px 16px;
     border-radius: 20px;
     backdrop-filter: blur(10px);
@@ -293,6 +296,8 @@ canvas {
     font-size: 20px;
     font-weight: bold;
     color: white;
+    min-width: 50px;
+    text-align: right;
 }
 
 #shop-btn {
@@ -301,7 +306,7 @@ canvas {
     right: 20px;
     width: 60px;
     height: 60px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
     border: none;
     border-radius: 30px;
     cursor: pointer;
@@ -312,7 +317,7 @@ canvas {
     pointer-events: auto;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
 }
 
 #shop-btn:active {
@@ -327,77 +332,62 @@ canvas {
 /* Shop Modal */
 .modal {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(26, 26, 46, 0.95);
-    border-radius: 20px;
-    padding: 20px;
-    z-index: 3;
-    width: 80%;
-    max-width: 400px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.modal-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
-    transition: background-color 0.2s;
+    opacity: 1;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
-.close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 20px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateY(0);
+    transition: transform 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal.hidden .modal-content {
+    transform: translateY(20px);
 }
 
 .shop-items {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 16px;
 }
 
 .shop-item {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 16px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
+    pointer-events: auto;
 }
 
 .shop-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
 }
 
@@ -408,20 +398,22 @@ canvas {
 .item-icon {
     width: 48px;
     height: 48px;
-    margin-bottom: 8px;
+}
+
+.item-info {
+    flex-grow: 1;
 }
 
 .item-name {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: white;
-    text-align: center;
+    margin-bottom: 4px;
 }
 
 .item-description {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.7);
-    text-align: center;
     margin-bottom: 8px;
 }
 
@@ -431,7 +423,19 @@ canvas {
     color: #FFD700;
 }
 
-/* Animations */
+/* Game Effects */
+.floating-text {
+    position: absolute;
+    pointer-events: none;
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%);
+    animation: float-up 1s ease-out forwards;
+    z-index: 3;
+}
+
 @keyframes float-up {
     0% {
         transform: translate(-50%, -50%);
@@ -443,52 +447,43 @@ canvas {
     }
 }
 
-@keyframes throw-knife {
-    0% {
-        transform: translate(-50%, -50%) scale(1.5) rotate(0deg);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(0.8) rotate(720deg);
-        opacity: 0;
-    }
-}
-
-@keyframes particle {
-    0% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(-50%, -50%) translateX(calc(cos(var(--angle)) * 50px)) translateY(calc(sin(var(--angle)) * 50px)) scale(0);
-        opacity: 0;
-    }
-}
-
-.floating-text {
-    position: absolute;
-    pointer-events: none;
-    z-index: 2;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.knife-effect {
-    position: absolute;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.particle {
-    position: absolute;
-    pointer-events: none;
-    z-index: 2;
-    box-shadow: 0 0 8px rgba(255, 75, 75, 0.5);
-}
-
-/* Адаптивность */
+/* Responsive Design */
 @media (max-width: 768px) {
-    .game-container {
-        max-width: 100%;
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .icon-button {
+        width: 50px;
+        height: 50px;
+    }
+
+    .icon-button img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .modal-content {
+        padding: 16px;
+    }
+
+    .shop-item {
+        padding: 12px;
+    }
+
+    .item-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .item-name {
+        font-size: 16px;
+    }
+
+    .item-description {
+        font-size: 12px;
     }
 }
 
@@ -597,7 +592,7 @@ canvas {
 }
 
 .shop-item {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     padding: 15px;
     border-radius: 15px;
     text-align: center;
@@ -641,4 +636,193 @@ canvas {
 
 .close-button:hover {
     background: #FF5252;
+}
+
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url('images/background.svg') center/cover;
+    opacity: 0.5;
+    z-index: 0;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.bottom-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.icon-button {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.icon-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.icon-button:active {
+    transform: scale(0.95);
+}
+
+.icon-button img {
+    width: 32px;
+    height: 32px;
+}
+
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.leaderboard-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.leaderboard-rank {
+    font-size: 20px;
+    font-weight: bold;
+    color: #FFD700;
+    min-width: 30px;
+}
+
+.leaderboard-name {
+    flex-grow: 1;
+}
+
+.leaderboard-score {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+@keyframes throw-knife {
+    0% {
+        transform: translate(-50%, -50%) scale(1.5) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.8) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes particle {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(calc(cos(var(--angle)) * 50px)) translateY(calc(sin(var(--angle)) * 50px)) scale(0);
+        opacity: 0;
+    }
+}
+
+.floating-text {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.knife-effect {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    box-shadow: 0 0 8px rgba(255, 75, 75, 0.5);
 }

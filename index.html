@@ -3,56 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Knife Clicker</title>
+    <title>Knife Throwing Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
+    <!-- UI Layer -->
     <div class="ui-container">
-        <div class="score-container">
-            <img src="images/ui/score-icon.svg" alt="Score" class="score-icon">
-            <span id="score" class="score-text">0</span>
+        <div class="top-bar">
+            <div class="score-container">
+                <img src="images/ui/score-icon.svg" alt="Score">
+                <span id="score">0</span>
+            </div>
+            <div class="combo-container">
+                <img src="images/ui/combo-icon.svg" alt="Combo">
+                <span id="combo">x1.0</span>
+            </div>
+            <div class="power-container">
+                <img src="images/ui/power-icon.svg" alt="Power">
+                <span id="power">1</span>
+            </div>
         </div>
-        <div class="combo-container">
-            <img src="images/ui/combo-icon.svg" alt="Combo" class="combo-icon">
-            <span id="combo" class="combo-text">x1.0</span>
-        </div>
-        <div class="power-container">
-            <img src="images/ui/power-icon.svg" alt="Power" class="power-icon">
-            <span id="power" class="power-text">1</span>
+        
+        <div class="bottom-bar">
+            <button id="shop-btn" class="icon-button">
+                <img src="images/ui/shop-icon.svg" alt="Shop">
+            </button>
         </div>
     </div>
 
-    <button id="shop-btn">
-        <img src="images/ui/shop-icon.svg" alt="Shop" class="shop-icon">
-    </button>
-
+    <!-- Shop Modal -->
     <div id="shop-modal" class="modal hidden">
-        <div class="modal-header">
-            <h2 class="modal-title">Shop</h2>
-            <button id="close-shop" class="close-btn">&times;</button>
-        </div>
-        <div class="shop-items">
-            <div class="shop-item" data-item="power">
-                <img src="images/powerups/power-upgrade.svg" alt="Power Up" class="item-icon">
-                <div class="item-name">Power Up</div>
-                <div class="item-description">Increases base click power</div>
-                <div class="item-cost">100</div>
+        <div class="modal-content">
+            <h2>Shop</h2>
+            <div class="shop-items">
+                <div class="shop-item" data-item="power">
+                    <img src="images/powerups/power-upgrade.svg" alt="Power Up">
+                    <div class="item-info">
+                        <div class="item-name">Power Up</div>
+                        <div class="item-description">Increases base power</div>
+                        <div class="item-cost">100</div>
+                    </div>
+                </div>
+                <div class="shop-item" data-item="combo">
+                    <img src="images/powerups/combo-multiplier.svg" alt="Combo Boost">
+                    <div class="item-info">
+                        <div class="item-name">Combo Boost</div>
+                        <div class="item-description">Increases max combo</div>
+                        <div class="item-cost">200</div>
+                    </div>
+                </div>
+                <div class="shop-item" data-item="auto">
+                    <img src="images/powerups/auto-click.svg" alt="Auto Clicker">
+                    <div class="item-info">
+                        <div class="item-name">Auto Clicker</div>
+                        <div class="item-description">Clicks automatically</div>
+                        <div class="item-cost">500</div>
+                    </div>
+                </div>
             </div>
-            <div class="shop-item" data-item="combo">
-                <img src="images/powerups/combo-multiplier.svg" alt="Combo Boost" class="item-icon">
-                <div class="item-name">Combo Boost</div>
-                <div class="item-description">Increases max combo</div>
-                <div class="item-cost">200</div>
-            </div>
-            <div class="shop-item" data-item="auto">
-                <img src="images/powerups/auto-click.svg" alt="Auto Clicker" class="item-icon">
-                <div class="item-name">Auto Clicker</div>
-                <div class="item-description">Clicks automatically</div>
-                <div class="item-cost">500</div>
-            </div>
+            <button class="close-button" onclick="toggleModal('shop-modal')">Close</button>
         </div>
     </div>
 

@@ -5,8 +5,8 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 
 // Set header color
-tg.setHeaderColor('#2C2C2C');
-tg.setBackgroundColor('#2C2C2C');
+tg.setHeaderColor('#1a1a2e');
+tg.setBackgroundColor('#1a1a2e');
 
 // Game state
 const gameState = {
@@ -14,223 +14,210 @@ const gameState = {
     combo: 1,
     power: 1,
     clickEffects: [],
+    targets: [],
+    activeKnife: 'basic',
     settings: {
         soundEnabled: true,
-        hapticEnabled: true
+        hapticEnabled: true,
+        particlesEnabled: true
     }
 };
 
-// Load user data
-if (tg.initDataUnsafe.user) {
-    const { first_name, last_name, username, id } = tg.initDataUnsafe.user;
-    gameState.user = {
-        name: first_name,
-        fullName: `${first_name} ${last_name || ''}`.trim(),
-        username,
-        id
-    };
-}
-
-// Initialize CloudStorage
-let cloudData = {};
-try {
-    const savedData = localStorage.getItem('gameData');
-    if (savedData) {
-        cloudData = JSON.parse(savedData);
-        gameState.score = cloudData.score || 0;
-        gameState.power = cloudData.power || 1;
+// Target class
+class Target {
+    constructor() {
+        this.x = Math.random() * (canvas.width - 100);
+        this.y = Math.random() * (canvas.height - 100);
+        this.radius = 45;
+        this.points = 100;
+        this.spawnTime = Date.now();
+        this.lifetime = 3000; // 3 seconds
+        this.scale = 1;
+        this.opacity = 1;
     }
-} catch (e) {
-    console.error('Error loading saved data:', e);
-}
 
-// Save game data
-function saveGameData() {
-    const dataToSave = {
-        score: gameState.score,
-        power: gameState.power,
-        lastSaved: Date.now()
-    };
-    localStorage.setItem('gameData', JSON.stringify(dataToSave));
-    
-    // Show popup
-    tg.showPopup({
-        title: 'Game Saved!',
-        message: `Score: ${Math.floor(gameState.score)}\nPower: ${gameState.power}`,
-        buttons: [{
-            type: 'ok'
-        }]
-    });
-}
-
-// Handle back button
-tg.BackButton.onClick(() => {
-    // Show confirmation before exit
-    tg.showConfirm('Do you want to save and exit?', (confirmed) => {
-        if (confirmed) {
-            saveGameData();
-            tg.close();
-        }
-    });
-});
-
-// Shop functionality
-const shopBtn = document.getElementById('shop-btn');
-const shopModal = document.getElementById('shop-modal');
-const closeShopBtn = document.getElementById('close-shop');
-
-shopBtn.addEventListener('click', () => {
-    if (gameState.settings.hapticEnabled) {
-        tg.HapticFeedback.impactOccurred('medium');
-    }
-    shopModal.classList.remove('hidden');
-});
-
-closeShopBtn.addEventListener('click', () => {
-    if (gameState.settings.hapticEnabled) {
-        tg.HapticFeedback.impactOccurred('light');
-    }
-    shopModal.classList.add('hidden');
-});
-
-// Shop items handling
-document.querySelectorAll('.shop-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const itemType = item.dataset.item;
-        const cost = parseInt(item.querySelector('.item-cost').textContent);
+    update() {
+        const age = Date.now() - this.spawnTime;
+        const lifePercent = age / this.lifetime;
         
-        if (gameState.score >= cost) {
-            // Purchase confirmation
-            tg.showConfirm(`Buy ${itemType} upgrade for ${cost} points?`, (confirmed) => {
-                if (confirmed) {
-                    gameState.score -= cost;
-                    
-                    switch(itemType) {
-                        case 'power':
-                            gameState.power += 1;
-                            break;
-                        case 'combo':
-                            gameState.maxCombo = (gameState.maxCombo || 5) + 1;
-                            break;
-                        case 'auto':
-                            startAutoClicker();
-                            break;
-                    }
-                    
-                    // Haptic feedback
-                    if (gameState.settings.hapticEnabled) {
-                        tg.HapticFeedback.notificationOccurred('success');
-                    }
-                    
-                    updateUI();
-                    saveGameData();
-                }
-            });
-        } else {
-            // Not enough points
-            tg.showPopup({
-                title: 'Not enough points!',
-                message: `You need ${cost - Math.floor(gameState.score)} more points`,
-                buttons: [{
-                    type: 'ok'
-                }]
-            });
-            
-            if (gameState.settings.hapticEnabled) {
-                tg.HapticFeedback.notificationOccurred('error');
-            }
+        // Pulse effect
+        this.scale = 1 + Math.sin(age * 0.005) * 0.1;
+        
+        // Fade out near end of life
+        if (lifePercent > 0.7) {
+            this.opacity = 1 - ((lifePercent - 0.7) / 0.3);
         }
-    });
-});
+        
+        return age < this.lifetime;
+    }
 
-// Main click handler
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.translate(this.x + 50, this.y + 50);
+        ctx.scale(this.scale, this.scale);
+        
+        // Draw target circles
+        for (let i = 3; i > 0; i--) {
+            ctx.beginPath();
+            ctx.arc(0, 0, i * 15, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 75, 75, ${i * 0.1})`;
+            ctx.strokeStyle = '#FF4B4B';
+            ctx.lineWidth = 2;
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        ctx.restore();
+    }
+
+    hitTest(x, y) {
+        const dx = x - (this.x + 50);
+        const dy = y - (this.y + 50);
+        return Math.sqrt(dx * dx + dy * dy) < this.radius * this.scale;
+    }
+}
+
+// Load game items
+let gameItems = {};
+fetch('items.json')
+    .then(response => response.json())
+    .then(data => {
+        gameItems = data;
+        // Initialize with basic knife
+        gameState.activeKnife = gameItems.knives.basic;
+    })
+    .catch(error => console.error('Error loading items:', error));
+
+// Target spawning
+function spawnTarget() {
+    if (gameState.targets.length < 3) {
+        gameState.targets.push(new Target());
+    }
+}
+
+// Start target spawning
+setInterval(spawnTarget, 1000);
+
+// Click handler with improved mechanics
 function handleClick(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches[0].clientX) - rect.left;
     const y = (e.clientY || e.touches[0].clientY) - rect.top;
 
-    // Add score
-    gameState.score += Math.floor(gameState.power * gameState.combo);
+    let hit = false;
     
-    // Increase combo
-    gameState.combo = Math.min(gameState.combo + 0.1, gameState.maxCombo || 5);
-    
-    // Add click effect
-    gameState.clickEffects.push(new ClickEffect(x, y));
+    // Check for target hits
+    gameState.targets = gameState.targets.filter(target => {
+        if (target.hitTest(x, y)) {
+            hit = true;
+            // Calculate score based on timing
+            const age = Date.now() - target.spawnTime;
+            const timeBonus = Math.max(0, 1 - (age / target.lifetime));
+            const points = Math.floor(target.points * (1 + timeBonus) * gameState.combo * gameState.power);
+            
+            // Add score
+            gameState.score += points;
+            
+            // Increase combo
+            gameState.combo = Math.min(gameState.combo + 0.2, gameState.maxCombo || 5);
+            
+            // Show points text
+            showFloatingText(`+${points}`, x, y);
+            
+            // Add hit effects
+            addHitEffects(x, y);
+            
+            return false; // Remove hit target
+        }
+        return target.update(); // Keep target if still alive
+    });
+
+    // Miss effects
+    if (!hit) {
+        gameState.combo = 1; // Reset combo on miss
+        showFloatingText('Miss!', x, y, '#FF4B4B');
+    }
 
     // Haptic feedback
     if (gameState.settings.hapticEnabled) {
-        tg.HapticFeedback.impactOccurred('light');
+        tg.HapticFeedback.impactOccurred(hit ? 'medium' : 'light');
     }
 
     // Update UI
     updateUI();
-    
-    // Auto-save every 1000 points
-    if (Math.floor(gameState.score) % 1000 === 0) {
-        saveGameData();
-    }
 }
 
-// Settings button in MainButton
-tg.MainButton.setText('Settings').show();
-tg.MainButton.onClick(() => {
-    tg.showPopup({
-        title: 'Settings',
-        message: 'Game Settings',
-        buttons: [
-            {
-                id: 'sound',
-                type: 'default',
-                text: `Sound: ${gameState.settings.soundEnabled ? 'ON' : 'OFF'}`
-            },
-            {
-                id: 'haptic',
-                type: 'default',
-                text: `Haptic: ${gameState.settings.hapticEnabled ? 'ON' : 'OFF'}`
-            },
-            {
-                id: 'save',
-                type: 'default',
-                text: 'Save Game'
-            },
-            {
-                id: 'close',
-                type: 'cancel',
-                text: 'Close'
-            }
-        ]
-    }, (buttonId) => {
-        switch (buttonId) {
-            case 'sound':
-                gameState.settings.soundEnabled = !gameState.settings.soundEnabled;
-                break;
-            case 'haptic':
-                gameState.settings.hapticEnabled = !gameState.settings.hapticEnabled;
-                break;
-            case 'save':
-                saveGameData();
-                break;
+// Floating text effect
+function showFloatingText(text, x, y, color = '#FFD700') {
+    const el = document.createElement('div');
+    el.className = 'floating-text';
+    el.textContent = text;
+    el.style.cssText = `
+        position: absolute;
+        left: ${x}px;
+        top: ${y}px;
+        color: ${color};
+        font-size: 24px;
+        font-weight: bold;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        animation: float-up 1s ease-out forwards;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+// Hit effects
+function addHitEffects(x, y) {
+    // Add knife throw effect
+    const knife = gameItems.knives[gameState.activeKnife];
+    if (knife) {
+        const img = new Image();
+        img.src = knife.image;
+        img.onload = () => {
+            const el = document.createElement('div');
+            el.className = 'knife-effect';
+            el.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 32px;
+                height: 32px;
+                background-image: url(${knife.image});
+                background-size: contain;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                animation: throw-knife 0.3s ease-out forwards;
+            `;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 300);
+        };
+    }
+
+    // Add particle effects
+    if (gameState.settings.particlesEnabled) {
+        for (let i = 0; i < 8; i++) {
+            const particle = document.createElement('div');
+            const angle = (i / 8) * Math.PI * 2;
+            particle.className = 'particle';
+            particle.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 8px;
+                height: 8px;
+                background: #FF4B4B;
+                border-radius: 50%;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                animation: particle 0.5s ease-out forwards;
+                --angle: ${angle}rad;
+            `;
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 500);
         }
-    });
-});
-
-// Auto-clicker functionality
-let autoClickerInterval;
-function startAutoClicker() {
-    if (!autoClickerInterval) {
-        autoClickerInterval = setInterval(() => {
-            gameState.score += Math.floor(gameState.power * (gameState.combo / 2));
-            updateUI();
-        }, 1000);
     }
-}
-
-// Update UI
-function updateUI() {
-    document.getElementById('score').textContent = Math.floor(gameState.score);
-    document.getElementById('combo').textContent = `x${gameState.combo.toFixed(1)}`;
-    document.getElementById('power').textContent = gameState.power;
 }
 
 // Game loop
@@ -238,10 +225,13 @@ function gameLoop() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Update and draw effects
-    gameState.clickEffects = gameState.clickEffects.filter(effect => {
-        const alive = effect.update();
-        if (alive) effect.draw();
+    // Draw background grid (optional)
+    drawGrid();
+
+    // Update and draw targets
+    gameState.targets = gameState.targets.filter(target => {
+        const alive = target.update();
+        if (alive) target.draw(ctx);
         return alive;
     });
 
@@ -253,7 +243,39 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Start game
+// Draw background grid
+function drawGrid() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+
+    // Draw vertical lines
+    for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    // Draw horizontal lines
+    for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+// Update UI
+function updateUI() {
+    document.getElementById('score').textContent = Math.floor(gameState.score);
+    document.getElementById('combo').textContent = `x${gameState.combo.toFixed(1)}`;
+    document.getElementById('power').textContent = gameState.power;
+}
+
+// Initialize game
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -272,291 +294,5 @@ canvas.addEventListener('touchstart', (e) => {
     handleClick(e);
 });
 
-// Start game loop
+// Start game
 gameLoop();
-
-// Powerup types
-const POWERUP_TYPES = {
-    DOUBLE_SCORE: {
-        name: 'Double Score',
-        duration: 3,
-        color: '#FFD700',
-        effect: (player) => {
-            player.scoreMultiplier = 2;
-            return () => player.scoreMultiplier = 1;
-        }
-    },
-    EXTRA_KNIFE: {
-        name: 'Extra Knives',
-        color: '#32CD32',
-        effect: (player) => {
-            player.knivesLeft += 3;
-            updateKnivesDisplay();
-        }
-    },
-    AREA_BOOST: {
-        name: 'Area Boost',
-        duration: 5,
-        color: '#9932CC',
-        effect: (player) => {
-            player.areaBoost = 1.5;
-            return () => player.areaBoost = 1;
-        }
-    },
-    STEAL_TERRITORY: {
-        name: 'Territory Steal',
-        color: '#FF1493',
-        effect: (player) => {
-            const opponent = gameState.players[(gameState.currentPlayer + 1) % 2];
-            const stolenCells = stealTerritory(opponent, 50);
-            player.score += stolenCells;
-            updateScore();
-        }
-    }
-};
-
-// Animation classes
-class KnifeAnimation {
-    constructor(knife) {
-        this.knife = knife;
-        this.progress = 0;
-        this.duration = 500;
-        this.startTime = Date.now();
-    }
-    
-    update() {
-        const elapsed = Date.now() - this.startTime;
-        this.progress = Math.min(1, elapsed / this.duration);
-        this.finished = this.progress >= 1;
-        return !this.finished;
-    }
-    
-    draw(ctx) {
-        const scale = 1 + Math.sin(this.progress * Math.PI) * 0.5;
-        ctx.save();
-        ctx.translate(
-            this.knife.x * gameState.cellSize + gameState.cellSize / 2,
-            this.knife.y * gameState.cellSize + gameState.cellSize / 2
-        );
-        ctx.rotate(this.progress * Math.PI * 4);
-        ctx.scale(scale, scale);
-        drawKnife(ctx, gameState.players[this.knife.player].color);
-        ctx.restore();
-    }
-}
-
-class FloatingText {
-    constructor(text, x, y, color) {
-        this.text = text;
-        this.x = x * gameState.cellSize;
-        this.y = y * gameState.cellSize;
-        this.color = color;
-        this.progress = 0;
-        this.duration = 1000;
-        this.startTime = Date.now();
-    }
-    
-    update() {
-        const elapsed = Date.now() - this.startTime;
-        this.progress = Math.min(1, elapsed / this.duration);
-        this.finished = this.progress >= 1;
-        return !this.finished;
-    }
-    
-    draw(ctx) {
-        ctx.save();
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = 1 - this.progress;
-        ctx.font = '20px sans-serif';
-        ctx.fillText(
-            this.text,
-            this.x,
-            this.y - this.progress * 30
-        );
-        ctx.restore();
-    }
-}
-
-class ClickEffect {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.radius = 0;
-        this.maxRadius = 50;
-        this.speed = 2;
-        this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-        this.opacity = 1;
-    }
-
-    update() {
-        this.radius += this.speed;
-        this.opacity = 1 - (this.radius / this.maxRadius);
-        return this.radius <= this.maxRadius;
-    }
-
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = this.color + Math.floor(this.opacity * 255).toString(16).padStart(2, '0');
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
-}
-
-// Helper functions
-function addKnifeAnimation(knife) {
-    gameState.animations.push(new KnifeAnimation(knife));
-}
-
-function addFloatingText(text, x, y, color) {
-    gameState.animations.push(new FloatingText(text, x, y, color));
-}
-
-function drawKnife(ctx, color) {
-    ctx.beginPath();
-    ctx.moveTo(-5, -2);
-    ctx.lineTo(5, 0);
-    ctx.lineTo(-5, 2);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-function isValidPosition(x, y) {
-    if (x < 0 || x >= gameState.gridSize || y < 0 || y >= gameState.gridSize) return false;
-    return !gameState.knives.some(k => k.x === x && k.y === y);
-}
-
-function switchPlayer() {
-    gameState.currentPlayer = (gameState.currentPlayer + 1) % 2;
-    document.getElementById('current-player').textContent = gameState.currentPlayer + 1;
-}
-
-function updateScore() {
-    // Update total score
-    const scoreElement = document.getElementById('score');
-    if (scoreElement) {
-        scoreElement.textContent = gameState.players[0].score + ':' + gameState.players[1].score;
-    }
-
-    // Update combo
-    const comboElement = document.getElementById('combo');
-    if (comboElement) {
-        comboElement.textContent = `x${gameState.players[gameState.currentPlayer].combo}`;
-    }
-
-    // Update knives left
-    const knivesElement = document.getElementById('knives');
-    if (knivesElement) {
-        knivesElement.textContent = gameState.players[gameState.currentPlayer].knivesLeft;
-    }
-}
-
-function updateKnivesDisplay() {
-    gameState.players.forEach((player, index) => {
-        document.getElementById(`knives-${index + 1}`).textContent = player.knivesLeft;
-    });
-}
-
-function checkGameOver() {
-    const noKnivesLeft = gameState.players.every(p => p.knivesLeft <= 0);
-    const totalTerritory = gameState.gridSize * gameState.gridSize;
-    const capturedTerritory = gameState.territory.flat().filter(x => x > 0).length;
-    
-    if (noKnivesLeft || capturedTerritory > totalTerritory * 0.8) {
-        gameState.gameOver = true;
-        
-        const winner = gameState.players[0].score > gameState.players[1].score ? 1 : 2;
-        const finalScores = `${gameState.players[0].score}:${gameState.players[1].score}`;
-        
-        tg.showPopup({
-            title: 'Game Over!',
-            message: `Player ${winner} wins!\nFinal Score: ${finalScores}`,
-            buttons: [{
-                type: 'ok',
-                text: 'New Game'
-            }]
-        }).then(() => {
-            window.location.reload();
-        });
-        
-        sendScore();
-    }
-}
-
-function drawGrid() {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-
-    // Vertical lines
-    for (let x = 0; x <= canvas.width; x += gameState.cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-
-    // Horizontal lines
-    for (let y = 0; y <= canvas.height; y += gameState.cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
-    
-    // Draw click effects
-    gameState.clickEffects.forEach(effect => effect.draw());
-}
-
-function addPowerupAnimation(powerup) {
-    const effectSystem = {
-        addPowerupEffect: (x, y, color) => {
-            ctx.save();
-            ctx.fillStyle = color;
-            ctx.globalAlpha = 0.5;
-            ctx.beginPath();
-            ctx.arc(x, y, 10, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.restore();
-        }
-    };
-    effectSystem.addPowerupEffect(
-        powerup.x * gameState.cellSize + gameState.cellSize / 2,
-        powerup.y * gameState.cellSize + gameState.cellSize / 2,
-        powerup.color
-    );
-}
-
-// Initialize game
-const game = new Game();
-game.start();
-setupEventListeners();
-startAnimationLoop();
-startPowerupSpawner();
-
-// Game loop
-function gameLoop() {
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Update and draw effects
-    gameState.clickEffects = gameState.clickEffects.filter(effect => {
-        const alive = effect.update();
-        if (alive) effect.draw();
-        return alive;
-    });
-
-    // Decrease combo over time
-    gameState.combo = Math.max(1, gameState.combo - 0.001);
-    updateUI();
-
-    // Next frame
-    requestAnimationFrame(gameLoop);
-}
-
-// Update UI elements
-function updateUI() {
-    document.getElementById('score').textContent = Math.floor(gameState.score);
-    document.getElementById('combo').textContent = `x${gameState.combo.toFixed(1)}`;
-    document.getElementById('power').textContent = gameState.power;
-}

@@ -15,10 +15,11 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background: #2C2C2C;
-    touch-action: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: #1a1a2e;
+    color: white;
     user-select: none;
-    font-family: Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #game-container {
@@ -34,10 +35,9 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-    cursor: pointer;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
 }
 
 .game-container {
@@ -262,90 +262,227 @@ canvas {
 
 .ui-container {
     position: fixed;
-    width: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     pointer-events: none;
 }
 
-.top-bar {
+.score-container, .combo-container, .power-container {
     display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    color: white;
-    font-family: Arial, sans-serif;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-}
-
-.stats {
-    display: flex;
-    gap: 20px;
-    font-size: 18px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-}
-
-button {
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
     padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.score-icon, .combo-icon, .power-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.score-text, .combo-text, .power-text {
+    font-size: 20px;
+    font-weight: bold;
     color: white;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: background 0.2s;
 }
 
-button:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.controls {
+#shop-btn {
     position: fixed;
     bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-    pointer-events: auto;
-}
-
-.control-key {
+    right: 20px;
     width: 60px;
     height: 60px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 16px;
-    user-select: none;
-    touch-action: none;
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.2s;
 }
 
-/* Кнопка "Назад" */
-.back-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: rgba(255, 65, 54, 0.8);
-    border: none;
-    border-radius: 4px;
+#shop-btn:active {
+    transform: scale(0.95);
+}
+
+.shop-icon {
+    width: 32px;
+    height: 32px;
+}
+
+/* Shop Modal */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    z-index: 3;
+    width: 80%;
+    max-width: 400px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: bold;
     color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
-.back-btn:hover {
-    background-color: rgba(255, 65, 54, 1);
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.shop-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.shop-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.shop-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.shop-item:active {
+    transform: scale(0.98);
+}
+
+.item-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+}
+
+.item-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+}
+
+.item-description {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.item-cost {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+/* Animations */
+@keyframes float-up {
+    0% {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -150%);
+        opacity: 0;
+    }
+}
+
+@keyframes throw-knife {
+    0% {
+        transform: translate(-50%, -50%) scale(1.5) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.8) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes particle {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(calc(cos(var(--angle)) * 50px)) translateY(calc(sin(var(--angle)) * 50px)) scale(0);
+        opacity: 0;
+    }
+}
+
+.floating-text {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.knife-effect {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    box-shadow: 0 0 8px rgba(255, 75, 75, 0.5);
 }
 
 /* Адаптивность */

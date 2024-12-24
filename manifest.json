@@ -1,0 +1,11 @@
+{
+    "name": "Knife Throwing Game",
+    "short_name": "Knife Game",
+    "description": "Multiplayer knife throwing game",
+    "version": "1.0.0",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "orientation": "portrait"
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="MobileOptimized" content="176">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Knife Throwing Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="effects-layer"></div>
+        
+        <!-- UI Elements -->
+        <div class="ui-container">
+            <div class="top-bar">
+                <div class="stats">
+                    <span>Score: <span id="score">0</span></span>
+                    <span>Combo: <span id="combo">x1</span></span>
+                    <span>Knives: <span id="knives">10</span></span>
+                </div>
+                <div class="buttons">
+                    <button id="profile-btn">Profile</button>
+                    <button id="shop-btn">Shop</button>
+                    <button id="settings-btn">Settings</button>
+                </div>
+            </div>
+            
+            <div class="ability-bar">
+                <div class="ability" data-ability="dash">
+                    <span class="key">SHIFT</span>
+                    <div class="cooldown"></div>
+                </div>
+                <div class="ability" data-ability="teleport">
+                    <span class="key">E</span>
+                    <div class="cooldown"></div>
+                </div>
+                <div class="ability" data-ability="time-slow">
+                    <span class="key">Q</span>
+                    <div class="cooldown"></div>
+                </div>
+                <div class="ability" data-ability="knife-rain">
+                    <span class="key">R</span>
+                    <div class="cooldown"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="bundle.js"></script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initialize Telegram WebApp
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+            
+            // Create game instance
+            window.game = new Game();
+            
+            // Initialize UI
+            window.ui = new UI();
+            
+            // Initialize profile
+            window.profile = new PlayerProfile();
+            
+            // Initialize shop
+            window.shop = new Shop();
+        });
+    </script>
+</body>
+</html>

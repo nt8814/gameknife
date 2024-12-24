@@ -20,8 +20,17 @@ import {
     stopBackgroundMusic
 } from './game/audio.js';
 
+// Initialize Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.expand();
+tg.enableClosingConfirmation();
+
+// Canvas setup
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
 // Game state
-let gameState = {
+const gameState = {
     score: 0,
     combo: 1,
     power: 1,
@@ -36,25 +45,18 @@ let gameState = {
     settings: {
         sound: true,
         music: true,
-        vibration: true
+        haptic: true
     }
 };
+
+// DOM Elements
+const character = document.getElementById('character-sprite');
+const levelProgress = document.getElementById('level-progress');
 
 // Game objects
 let targets = [];
 let particles = [];
 let lastSpawnTime = 0;
-
-// Initialize Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.expand();
-tg.enableClosingConfirmation();
-
-// DOM Elements
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const character = document.getElementById('character-sprite');
-const levelProgress = document.getElementById('level-progress');
 
 // Set canvas size
 function resizeCanvas() {
@@ -131,7 +133,7 @@ function handleClick(x, y) {
             createHitEffect(x, y, isCritical);
             playHitSound();
             
-            if (gameState.settings.vibration) {
+            if (gameState.settings.haptic) {
                 tg.HapticFeedback.impactOccurred('light');
             }
             
@@ -165,7 +167,7 @@ function levelUp() {
     if (gameState.settings.sound) {
         playLevelUpSound();
     }
-    if (gameState.settings.vibration) {
+    if (gameState.settings.haptic) {
         tg.HapticFeedback.notificationOccurred('success');
     }
     
@@ -214,8 +216,8 @@ document.getElementById('music-toggle').addEventListener('change', (e) => {
     saveGameState();
 });
 
-document.getElementById('vibration-toggle').addEventListener('change', (e) => {
-    gameState.settings.vibration = e.target.checked;
+document.getElementById('haptic-toggle').addEventListener('change', (e) => {
+    gameState.settings.haptic = e.target.checked;
     saveGameState();
 });
 
@@ -310,5 +312,11 @@ function initGame() {
     gameLoop();
 }
 
-// Initialize the game
-initGame();
+// Initialize the game when DOM is loaded
+window.addEventListener('DOMContentLoaded', () => {
+    try {
+        initGame();
+    } catch (error) {
+        console.error('Failed to initialize game:', error);
+    }
+});

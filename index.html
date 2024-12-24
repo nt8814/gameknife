@@ -8,7 +8,7 @@
     <meta name="MobileOptimized" content="176">
     <meta name="HandheldFriendly" content="True">
     <meta name="robots" content="noindex,nofollow">
-    <title>Knife Throwing Game</title>
+    <title>Knife Clicker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
@@ -16,22 +16,16 @@
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <div id="effects-layer"></div>
         
-        <!-- UI Elements -->
-        <div class="ui-container">
-            <div class="top-bar">
-                <div class="stats">
-                    <span>Score: <span id="score">0</span></span>
-                    <span>Combo: <span id="combo">x1</span></span>
-                    <span>Power: <span id="power">1</span></span>
-                </div>
-                <div class="buttons">
-                    <button id="profile-btn">Profile</button>
-                    <button id="shop-btn">Shop</button>
-                </div>
-            </div>
+        <!-- Score Display -->
+        <div class="score-display">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="combo">Combo: <span id="combo">x1</span></div>
+            <div class="power">Power: <span id="power">1</span></div>
         </div>
+
+        <!-- Shop Button -->
+        <button id="shop-btn" class="shop-button">Shop</button>
     </div>
 
     <!-- Load Scripts -->

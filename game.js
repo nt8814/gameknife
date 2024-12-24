@@ -46,7 +46,11 @@ const gameState = {
     territory: Array(48).fill().map(() => Array(48).fill(0)),
     gameOver: false,
     powerups: [],
-    animations: []
+    animations: [],
+    score: 0,
+    combo: 1,
+    power: 1,
+    clickEffects: []
 };
 
 // Powerup types
@@ -215,10 +219,20 @@ function handleClick(e) {
     if (gameState.gameOver) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / gameState.cellSize);
-    const y = Math.floor((e.clientY - rect.top) / gameState.cellSize);
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+    // Add score
+    gameState.score += Math.floor(gameState.power * gameState.combo);
     
-    throwKnife(x, y);
+    // Increase combo
+    gameState.combo = Math.min(gameState.combo + 0.1, 5);
+    
+    // Add click effect
+    gameState.clickEffects.push(new ClickEffect(x, y));
+
+    // Update UI
+    updateUI();
 }
 
 // Touch handler for mobile
@@ -228,10 +242,20 @@ function handleTouch(e) {
     
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
-    const x = Math.floor((touch.clientX - rect.left) / gameState.cellSize);
-    const y = Math.floor((touch.clientY - rect.top) / gameState.cellSize);
+    const x = (touch.clientX || e.touches[0].clientX) - rect.left;
+    const y = (touch.clientY || e.touches[0].clientY) - rect.top;
+
+    // Add score
+    gameState.score += Math.floor(gameState.power * gameState.combo);
     
-    throwKnife(x, y);
+    // Increase combo
+    gameState.combo = Math.min(gameState.combo + 0.1, 5);
+    
+    // Add click effect
+    gameState.clickEffects.push(new ClickEffect(x, y));
+
+    // Update UI
+    updateUI();
 }
 
 // Resize handler
@@ -454,6 +478,32 @@ class FloatingText {
     }
 }
 
+class ClickEffect {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 50;
+        this.speed = 2;
+        this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+        this.opacity = 1;
+    }
+
+    update() {
+        this.radius += this.speed;
+        this.opacity = 1 - (this.radius / this.maxRadius);
+        return this.radius <= this.maxRadius;
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = this.color + Math.floor(this.opacity * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+}
+
 // Helper functions
 function addKnifeAnimation(knife) {
     gameState.animations.push(new KnifeAnimation(knife));
@@ -554,6 +604,9 @@ function drawGrid() {
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
     }
+    
+    // Draw click effects
+    gameState.clickEffects.forEach(effect => effect.draw());
 }
 
 function addPowerupAnimation(powerup) {
@@ -581,3 +634,30 @@ game.start();
 setupEventListeners();
 startAnimationLoop();
 startPowerupSpawner();
+
+// Game loop
+function gameLoop() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update and draw effects
+    gameState.clickEffects = gameState.clickEffects.filter(effect => {
+        const alive = effect.update();
+        if (alive) effect.draw();
+        return alive;
+    });
+
+    // Decrease combo over time
+    gameState.combo = Math.max(1, gameState.combo - 0.001);
+    updateUI();
+
+    // Next frame
+    requestAnimationFrame(gameLoop);
+}
+
+// Update UI elements
+function updateUI() {
+    document.getElementById('score').textContent = Math.floor(gameState.score);
+    document.getElementById('combo').textContent = `x${gameState.combo.toFixed(1)}`;
+    document.getElementById('power').textContent = gameState.power;
+}

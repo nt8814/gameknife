@@ -18,8 +18,7 @@ body {
     background: #2C2C2C;
     touch-action: none;
     user-select: none;
-    font-family: 'Roboto', sans-serif;
-    color: var(--text-color);
+    font-family: Arial, sans-serif;
 }
 
 .game-container {
@@ -353,4 +352,51 @@ button:hover {
     .game-container {
         max-width: 100%;
     }
+}
+
+.score-display {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px 30px;
+    border-radius: 15px;
+    color: white;
+    font-size: 20px;
+    text-align: center;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.score-display > div {
+    margin: 5px 0;
+}
+
+.score { color: #FFD700; }
+.combo { color: #FF6B6B; }
+.power { color: #4ECDC4; }
+
+.shop-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 15px 30px;
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.shop-button:hover {
+    background: #45B7AF;
+    transform: scale(1.05);
+}
+
+.shop-button:active {
+    transform: scale(0.95);
 }

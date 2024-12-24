@@ -1,57 +1,279 @@
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
 
-// Wait for WebApp to be ready
-window.Telegram.WebApp.ready();
-window.Telegram.WebApp.expand();
+// Expand to full screen
+tg.expand();
 
-// Get canvas and context
+// Set header color
+tg.setHeaderColor('#2C2C2C');
+tg.setBackgroundColor('#2C2C2C');
+
+// Game state
+const gameState = {
+    score: 0,
+    combo: 1,
+    power: 1,
+    clickEffects: [],
+    settings: {
+        soundEnabled: true,
+        hapticEnabled: true
+    }
+};
+
+// Load user data
+if (tg.initDataUnsafe.user) {
+    const { first_name, last_name, username, id } = tg.initDataUnsafe.user;
+    gameState.user = {
+        name: first_name,
+        fullName: `${first_name} ${last_name || ''}`.trim(),
+        username,
+        id
+    };
+}
+
+// Initialize CloudStorage
+let cloudData = {};
+try {
+    const savedData = localStorage.getItem('gameData');
+    if (savedData) {
+        cloudData = JSON.parse(savedData);
+        gameState.score = cloudData.score || 0;
+        gameState.power = cloudData.power || 1;
+    }
+} catch (e) {
+    console.error('Error loading saved data:', e);
+}
+
+// Save game data
+function saveGameData() {
+    const dataToSave = {
+        score: gameState.score,
+        power: gameState.power,
+        lastSaved: Date.now()
+    };
+    localStorage.setItem('gameData', JSON.stringify(dataToSave));
+    
+    // Show popup
+    tg.showPopup({
+        title: 'Game Saved!',
+        message: `Score: ${Math.floor(gameState.score)}\nPower: ${gameState.power}`,
+        buttons: [{
+            type: 'ok'
+        }]
+    });
+}
+
+// Handle back button
+tg.BackButton.onClick(() => {
+    // Show confirmation before exit
+    tg.showConfirm('Do you want to save and exit?', (confirmed) => {
+        if (confirmed) {
+            saveGameData();
+            tg.close();
+        }
+    });
+});
+
+// Shop functionality
+const shopBtn = document.getElementById('shop-btn');
+const shopModal = document.getElementById('shop-modal');
+const closeShopBtn = document.getElementById('close-shop');
+
+shopBtn.addEventListener('click', () => {
+    if (gameState.settings.hapticEnabled) {
+        tg.HapticFeedback.impactOccurred('medium');
+    }
+    shopModal.classList.remove('hidden');
+});
+
+closeShopBtn.addEventListener('click', () => {
+    if (gameState.settings.hapticEnabled) {
+        tg.HapticFeedback.impactOccurred('light');
+    }
+    shopModal.classList.add('hidden');
+});
+
+// Shop items handling
+document.querySelectorAll('.shop-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const itemType = item.dataset.item;
+        const cost = parseInt(item.querySelector('.item-cost').textContent);
+        
+        if (gameState.score >= cost) {
+            // Purchase confirmation
+            tg.showConfirm(`Buy ${itemType} upgrade for ${cost} points?`, (confirmed) => {
+                if (confirmed) {
+                    gameState.score -= cost;
+                    
+                    switch(itemType) {
+                        case 'power':
+                            gameState.power += 1;
+                            break;
+                        case 'combo':
+                            gameState.maxCombo = (gameState.maxCombo || 5) + 1;
+                            break;
+                        case 'auto':
+                            startAutoClicker();
+                            break;
+                    }
+                    
+                    // Haptic feedback
+                    if (gameState.settings.hapticEnabled) {
+                        tg.HapticFeedback.notificationOccurred('success');
+                    }
+                    
+                    updateUI();
+                    saveGameData();
+                }
+            });
+        } else {
+            // Not enough points
+            tg.showPopup({
+                title: 'Not enough points!',
+                message: `You need ${cost - Math.floor(gameState.score)} more points`,
+                buttons: [{
+                    type: 'ok'
+                }]
+            });
+            
+            if (gameState.settings.hapticEnabled) {
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+    });
+});
+
+// Main click handler
+function handleClick(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+    // Add score
+    gameState.score += Math.floor(gameState.power * gameState.combo);
+    
+    // Increase combo
+    gameState.combo = Math.min(gameState.combo + 0.1, gameState.maxCombo || 5);
+    
+    // Add click effect
+    gameState.clickEffects.push(new ClickEffect(x, y));
+
+    // Haptic feedback
+    if (gameState.settings.hapticEnabled) {
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    // Update UI
+    updateUI();
+    
+    // Auto-save every 1000 points
+    if (Math.floor(gameState.score) % 1000 === 0) {
+        saveGameData();
+    }
+}
+
+// Settings button in MainButton
+tg.MainButton.setText('Settings').show();
+tg.MainButton.onClick(() => {
+    tg.showPopup({
+        title: 'Settings',
+        message: 'Game Settings',
+        buttons: [
+            {
+                id: 'sound',
+                type: 'default',
+                text: `Sound: ${gameState.settings.soundEnabled ? 'ON' : 'OFF'}`
+            },
+            {
+                id: 'haptic',
+                type: 'default',
+                text: `Haptic: ${gameState.settings.hapticEnabled ? 'ON' : 'OFF'}`
+            },
+            {
+                id: 'save',
+                type: 'default',
+                text: 'Save Game'
+            },
+            {
+                id: 'close',
+                type: 'cancel',
+                text: 'Close'
+            }
+        ]
+    }, (buttonId) => {
+        switch (buttonId) {
+            case 'sound':
+                gameState.settings.soundEnabled = !gameState.settings.soundEnabled;
+                break;
+            case 'haptic':
+                gameState.settings.hapticEnabled = !gameState.settings.hapticEnabled;
+                break;
+            case 'save':
+                saveGameData();
+                break;
+        }
+    });
+});
+
+// Auto-clicker functionality
+let autoClickerInterval;
+function startAutoClicker() {
+    if (!autoClickerInterval) {
+        autoClickerInterval = setInterval(() => {
+            gameState.score += Math.floor(gameState.power * (gameState.combo / 2));
+            updateUI();
+        }, 1000);
+    }
+}
+
+// Update UI
+function updateUI() {
+    document.getElementById('score').textContent = Math.floor(gameState.score);
+    document.getElementById('combo').textContent = `x${gameState.combo.toFixed(1)}`;
+    document.getElementById('power').textContent = gameState.power;
+}
+
+// Game loop
+function gameLoop() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update and draw effects
+    gameState.clickEffects = gameState.clickEffects.filter(effect => {
+        const alive = effect.update();
+        if (alive) effect.draw();
+        return alive;
+    });
+
+    // Decrease combo over time
+    gameState.combo = Math.max(1, gameState.combo - 0.001);
+    updateUI();
+
+    // Next frame
+    requestAnimationFrame(gameLoop);
+}
+
+// Start game
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Set canvas size to match viewport
+// Set canvas size
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Game state
-const gameState = {
-    gridSize: 48,
-    cellSize: 10,
-    players: [
-        { 
-            id: 1, 
-            score: 0, 
-            color: '#FF4136', 
-            knivesLeft: 10,
-            powerups: [],
-            combo: 0
-        },
-        { 
-            id: 2, 
-            score: 0, 
-            color: '#0074D9', 
-            knivesLeft: 10,
-            powerups: [],
-            combo: 0
-        }
-    ],
-    currentPlayer: 0,
-    knives: [],
-    territory: Array(48).fill().map(() => Array(48).fill(0)),
-    gameOver: false,
-    powerups: [],
-    animations: [],
-    score: 0,
-    combo: 1,
-    power: 1,
-    clickEffects: []
-};
+// Event listeners
+canvas.addEventListener('click', handleClick);
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleClick(e);
+});
+
+// Start game loop
+gameLoop();
 
 // Powerup types
 const POWERUP_TYPES = {
@@ -92,329 +314,6 @@ const POWERUP_TYPES = {
         }
     }
 };
-
-class Game {
-    constructor() {
-        // Create canvas
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        document.body.appendChild(this.canvas);
-        this.ctx = this.canvas.getContext('2d');
-
-        // Initialize game state
-        this.state = {
-            score: 0,
-            combo: 1,
-            lastKnifeTime: 0,
-            knivesLeft: CONFIG.game.startingKnives,
-            currentKnife: CONFIG.knives.standard,
-            knives: [],
-            particles: [],
-            camera: {
-                x: 0,
-                y: 0,
-                z: 0,
-                rotationX: 0,
-                rotationY: 0,
-                velocity: { x: 0, y: 0, z: 0 }
-            },
-            abilities: {
-                dash: { active: false, lastUsed: 0 },
-                teleport: { active: false, lastUsed: 0 },
-                timeSlowdown: { active: false, lastUsed: 0 },
-                knifeRain: { active: false, lastUsed: 0 }
-            },
-            throwAnimation: {
-                active: false,
-                startTime: 0,
-                duration: 300
-            }
-        };
-
-        // Load knife models
-        this.knifeModels = {};
-        this.loadKnifeModels();
-
-        // Create effect system
-        this.effectSystem = new EffectSystem(this);
-
-        // Initialize input handling
-        this.setupInput();
-
-        // Start game loop
-        this.lastTime = performance.now();
-        this.gameLoop();
-    }
-
-    setupInput() {
-        // Create input manager
-        if (!window.inputManager) {
-            window.inputManager = new InputManager();
-        }
-        this.input = window.inputManager;
-
-        // Add mouse move handler
-        document.addEventListener('mouse-move', (e) => {
-            if (document.pointerLockElement === this.canvas) {
-                this.handleMouseMove(e.detail.movementX, e.detail.movementY);
-            }
-        });
-
-        // Add click handler
-        this.canvas.addEventListener('click', () => {
-            if (document.pointerLockElement !== this.canvas) {
-                this.input.lockMouse(this.canvas);
-            } else {
-                this.throwKnife();
-            }
-        });
-    }
-
-    {{ ... }}
-
-class InputManager {
-    constructor() {
-        this.mouseLocked = false;
-    }
-
-    lockMouse(canvas) {
-        canvas.requestPointerLock = canvas.requestPointerLock || 
-                                   canvas.mozRequestPointerLock ||
-                                   canvas.webkitRequestPointerLock;
-        document.exitPointerLock = document.exitPointerLock ||
-                                 document.mozExitPointerLock ||
-                                 document.webkitExitPointerLock;
-
-        canvas.requestPointerLock();
-        this.mouseLocked = true;
-    }
-}
-
-// Export InputManager
-window.InputManager = InputManager;
-
-// Setup event listeners
-function setupEventListeners() {
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleTouch);
-    window.addEventListener('resize', handleResize);
-}
-
-// Mouse move handler
-function handleMouseMove(e) {
-    if (gameState.gameOver) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / gameState.cellSize);
-    const y = Math.floor((e.clientY - rect.top) / gameState.cellSize);
-    
-    drawGrid();
-    drawPreview(x, y);
-}
-
-// Click handler
-function handleClick(e) {
-    if (gameState.gameOver) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-
-    // Add score
-    gameState.score += Math.floor(gameState.power * gameState.combo);
-    
-    // Increase combo
-    gameState.combo = Math.min(gameState.combo + 0.1, 5);
-    
-    // Add click effect
-    gameState.clickEffects.push(new ClickEffect(x, y));
-
-    // Update UI
-    updateUI();
-}
-
-// Touch handler for mobile
-function handleTouch(e) {
-    e.preventDefault();
-    if (gameState.gameOver) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = (touch.clientX || e.touches[0].clientX) - rect.left;
-    const y = (touch.clientY || e.touches[0].clientY) - rect.top;
-
-    // Add score
-    gameState.score += Math.floor(gameState.power * gameState.combo);
-    
-    // Increase combo
-    gameState.combo = Math.min(gameState.combo + 0.1, 5);
-    
-    // Add click effect
-    gameState.clickEffects.push(new ClickEffect(x, y));
-
-    // Update UI
-    updateUI();
-}
-
-// Resize handler
-function handleResize() {
-    canvas.width = Math.min(480, window.innerWidth - 40);
-    canvas.height = canvas.width;
-    gameState.cellSize = canvas.width / gameState.gridSize;
-    drawGrid();
-}
-
-// Animation loop
-function startAnimationLoop() {
-    function animate() {
-        if (gameState.animations.length > 0) {
-            gameState.animations = gameState.animations.filter(anim => {
-                anim.update();
-                return !anim.finished;
-            });
-            drawGrid();
-        }
-        requestAnimationFrame(animate);
-    }
-    animate();
-}
-
-// Powerup spawner
-function startPowerupSpawner() {
-    function spawnPowerup() {
-        if (Math.random() < 0.1 && gameState.powerups.length < 3) {
-            const types = Object.keys(POWERUP_TYPES);
-            const type = types[Math.floor(Math.random() * types.length)];
-            const x = Math.floor(Math.random() * gameState.gridSize);
-            const y = Math.floor(Math.random() * gameState.gridSize);
-            
-            if (isValidPosition(x, y)) {
-                const powerup = { x, y, type, spawnTime: Date.now() };
-                gameState.powerups.push(powerup);
-                addPowerupAnimation(powerup);
-            }
-        }
-        setTimeout(spawnPowerup, 5000);
-    }
-    spawnPowerup();
-}
-
-// Throw knife
-function throwKnife(x, y) {
-    const currentPlayer = gameState.players[gameState.currentPlayer];
-    
-    if (currentPlayer.knivesLeft <= 0) {
-        tg.showAlert('No knives left!');
-        return;
-    }
-    
-    if (!isValidPosition(x, y)) return;
-    
-    currentPlayer.knivesLeft--;
-    updateKnivesDisplay();
-    
-    // Check for powerup collection
-    const powerupIndex = gameState.powerups.findIndex(p => p.x === x && p.y === y);
-    if (powerupIndex !== -1) {
-        collectPowerup(gameState.powerups[powerupIndex]);
-        gameState.powerups.splice(powerupIndex, 1);
-    }
-    
-    // Add knife
-    const knife = {
-        x, y,
-        player: gameState.currentPlayer,
-        timestamp: Date.now()
-    };
-    gameState.knives.push(knife);
-    
-    // Add throwing animation
-    addKnifeAnimation(knife);
-    
-    // Calculate territory
-    const capturedArea = calculateTerritory();
-    if (capturedArea > 0) {
-        currentPlayer.combo++;
-        const bonus = Math.floor(capturedArea * (1 + currentPlayer.combo * 0.1) * (currentPlayer.scoreMultiplier || 1));
-        currentPlayer.score += bonus;
-        
-        // Show floating score
-        addFloatingText(`+${bonus}`, x, y, currentPlayer.color);
-        
-        document.getElementById('combo').textContent = currentPlayer.combo;
-    } else {
-        currentPlayer.combo = 0;
-        document.getElementById('combo').textContent = '0';
-    }
-    
-    updateScore();
-    checkGameOver();
-    switchPlayer();
-}
-
-// Calculate territory using improved algorithm
-function calculateTerritory() {
-    const currentPlayer = gameState.players[gameState.currentPlayer];
-    const playerKnives = gameState.knives.filter(k => k.player === gameState.currentPlayer);
-    
-    if (playerKnives.length < 3) return 0;
-    
-    let capturedCells = 0;
-    const lastThreeKnives = playerKnives.slice(-3);
-    
-    // Create polygon from last three knives
-    const polygon = lastThreeKnives.map(k => ({ x: k.x, y: k.y }));
-    
-    // Check each cell within bounding box of polygon
-    const bounds = getBoundingBox(polygon);
-    for (let i = bounds.minX; i <= bounds.maxX; i++) {
-        for (let j = bounds.minY; j <= bounds.maxY; j++) {
-            if (i >= 0 && i < gameState.gridSize && j >= 0 && j < gameState.gridSize) {
-                if (isPointInPolygon({ x: i, y: j }, polygon)) {
-                    if (gameState.territory[i][j] !== gameState.currentPlayer + 1) {
-                        gameState.territory[i][j] = gameState.currentPlayer + 1;
-                        capturedCells++;
-                    }
-                }
-            }
-        }
-    }
-    
-    // Apply area boost if active
-    if (currentPlayer.areaBoost > 1) {
-        capturedCells = Math.floor(capturedCells * currentPlayer.areaBoost);
-    }
-    
-    return capturedCells;
-}
-
-// Get bounding box of polygon
-function getBoundingBox(polygon) {
-    const xs = polygon.map(p => p.x);
-    const ys = polygon.map(p => p.y);
-    return {
-        minX: Math.floor(Math.min(...xs)),
-        maxX: Math.ceil(Math.max(...xs)),
-        minY: Math.floor(Math.min(...ys)),
-        maxY: Math.ceil(Math.max(...ys))
-    };
-}
-
-// Check if point is in polygon
-function isPointInPolygon(point, polygon) {
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        const xi = polygon[i].x, yi = polygon[i].y;
-        const xj = polygon[j].x, yj = polygon[j].y;
-        
-        const intersect = ((yi > point.y) !== (yj > point.y))
-            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-    return inside;
-}
 
 // Animation classes
 class KnifeAnimation {

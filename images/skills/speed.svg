@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .skill { fill: var(--tg-theme-button-color, #2481cc); }
+    </style>
+    
+    <!-- Lightning bolt -->
+    <path class="skill" d="M28,4 L12,28 H24 L20,44 L36,20 H24 L28,4 Z"/>
+</svg>

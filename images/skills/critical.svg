@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .skill { fill: var(--tg-theme-button-color, #2481cc); }
+    </style>
+    
+    <!-- Star shape -->
+    <path class="skill" d="M24,4 L29,19 L44,19 L32,28 L37,44 L24,34 L11,44 L16,28 L4,19 L19,19 Z"/>
+</svg>

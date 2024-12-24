@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .character { fill: var(--tg-theme-button-color, #2481cc); }
+        .shadow { fill: rgba(0, 0, 0, 0.1); }
+    </style>
+    
+    <!-- Shadow -->
+    <ellipse class="shadow" cx="60" cy="110" rx="40" ry="8"/>
+    
+    <!-- Character body -->
+    <g class="character">
+        <!-- Body -->
+        <path d="M40,50 C40,30 80,30 80,50 L80,90 C80,110 40,110 40,90 Z"/>
+        
+        <!-- Head -->
+        <circle cx="60" cy="40" r="20"/>
+        
+        <!-- Eyes -->
+        <circle fill="white" cx="52" cy="35" r="6"/>
+        <circle fill="white" cx="68" cy="35" r="6"/>
+        <circle fill="black" cx="52" cy="35" r="3"/>
+        <circle fill="black" cx="68" cy="35" r="3"/>
+        
+        <!-- Smile -->
+        <path fill="white" d="M50,45 Q60,55 70,45" stroke="white" stroke-width="2" fill="none"/>
+    </g>
+</svg>
